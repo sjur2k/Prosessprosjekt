@@ -1,15 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-plt.rcParams.update({
-    "font.family": "serif",
-    "mathtext.fontset": "cm",        
-    "mathtext.rm": "serif",
-    "font.size": 14,
-})
+import constants5 as const
 
-
-c=[4.96563E2,3.41697E5,1.69131,1.47225E3,1.28338E5]
+c=const.Hc
 c=[i*1.0E-3 for i in c]
 def K(T,alpha):
     return (c[0]+c[1]*alpha*T**-1)*np.exp(c[2]*alpha**2+c[3]*T**-1+c[4]*alpha*T**-2)
@@ -28,18 +20,3 @@ for i in range(len(T)):
     for j in range(len(alpha)):
         p.append(p_CO2_g(K2[i],KH[-1][j],alpha[j]))
     p_CO2.append(p)
-
-plt.figure(figsize=(8,7))
-colors = cm.bwr(np.linspace(0.1, 0.9, len(T)))
-
-for i in range(len(p_CO2)):
-    plt.plot(alpha,p_CO2[i],color=colors[i],label=f"T = {T[i]}K")
-    plt.xlabel(r"'Loading'-faktor, $\alpha$")
-    plt.ylabel(r"$p_{\mathrm{CO_2}}$ [Pa]")    
-    plt.yscale("log")
-    plt.xlim(0,0.5)
-handles, labels = plt.gca().get_legend_handles_labels()
-plt.legend(handles[::-1], labels[::-1])
-plt.tight_layout()
-plt.show()
-#plt.savefig("CO2_partialkonsentrasjon.eps",dpi=300)
