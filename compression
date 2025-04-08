@@ -2,6 +2,7 @@ import constants5
 import numpy as np
 #from energibalanse import C_p_CO2
 from heatcapacity import C_p_CO2
+import MassBalance as mb
 
 #Gjerne endre hvis det er en bedre måte å integrere på
 
@@ -17,7 +18,7 @@ def ett_steg_kompresjon():
     T_ut = 303  # [K]
     p_ut = 20  # [bar]
 
-    m9 =  # Du må fylle inn massestrømmen her
+    m9 =  mb.m9
 
     cp_CO2 = 37  # [SI, J K mol^-1]
     k = constants5.gasConst / cp_CO2  # R/cp_CO2
@@ -48,7 +49,7 @@ def tre_steg_kompresjon():
     T_ut = 303  # [K]
     p_ut = 20  # [bar]
 
-    m9 =  # Husk å fylle inn massestrømmen
+    m9 =  mb.m9
 
     cp_CO2 = 37  # [SI, J K mol^-1]
     k = constants5.gasConst / cp_CO2  # R/cp_CO2
