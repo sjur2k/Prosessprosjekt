@@ -11,41 +11,54 @@ wh3 = 0.7 - wc3
 wh4 = 0.7 - wc4
 
 
-def liquidMassFracs(alpha):
-    n_MEA = 100.0
-    mass_MEA = n_MEA * const.MwMEA / 1000
-    
-    mass_h2o = mass_MEA*(1/0.30 -1)
-    
-    n_co2 = alpha*n_MEA    
-    mass_co2 = n_co2 * const.Mw[0] / 1000
-    
-    total_mass = mass_MEA + mass_h2o + mass_co2
-    
-    wc = mass_co2 / total_mass
-    wh = mass_h2o / total_mass
-    wm = mass_MEA / total_mass
-    
-    return wc, wh, wm
+#Vektfraksjoner strøm 3 = strøm 6
 
-wc3, wh3, wm3 = liquidMassFracs(const.alpha3)
-wc4, wh4, wm4 = liquidMassFracs(const.alpha4)
+wc3 = wf.WtFracCO2(const.alpha3)
+wm3 = const.waMEA
+wh3 = wc3-wh3
+wc6, wm6, wh6 = wc3, wm3, wh3
 
 
-wc6, wh6, wm6 = liquidMassFracs(const.alpha3) #same as wc3, wh3, wm3  
+#Vektfraksjoner strøm 4
+wc4 = wf.WtFracCO2(const.alpha4)
+
+
+# def liquidMassFracs(alpha):
+#     n_MEA = 100.0
+#     mass_MEA = n_MEA * const.MwMEA / 1000
+    
+#     mass_h2o = mass_MEA*(1/0.30 -1)
+    
+#     n_co2 = alpha*n_MEA    
+#     mass_co2 = n_co2 * const.Mw[0] / 1000
+    
+#     total_mass = mass_MEA + mass_h2o + mass_co2
+    
+#     wc = mass_co2 / total_mass
+#     wh = mass_h2o / total_mass
+#     wm = mass_MEA / total_mass
+    
+#     return wc, wh, wm
+
+# wc3, wh3, wm3 = liquidMassFracs(const.alpha3)
+# wc4, wh4, wm4 = liquidMassFracs(const.alpha4)
+# wc6, wh6, wm6 = liquidMassFracs(const.alpha3) #same as wc3, wh3, wm3  
 
 wc8 = (const.xc8*const.Mw[0] / 1000) / (const.xc8*const.Mw[0] / 1000 + (1-const.xc8)*const.Mw[1] / 1000)
 
 
 def massBalances(vars):
-    m2, m4, m6, m8, m9 = vars
-    eq = [0]*5
+    m2, m4, m6, m8, m9 ,wm4= vars
+    eq = [0]*6
     
     #massfractions in stream 2 
     wn2_out = (const.m1*const.wn1)/m2
     wo2_out = (const.m1*const.wo1)/m2
     wh2_out = (const.m1*const.wh1+wh3*m6-wh4*m4)/m2
     wc2_out = 1-(wn2_out + wo2_out + wh2_out)
+    wh4 = (const.m1*const.wh1+wh3*m6-m2*wh2_out)/m4
+    
+    
     
     #massbalances
 
@@ -60,14 +73,16 @@ def massBalances(vars):
     
     eq[4] = m8-m9/wc8
     
+    eq[5] = wh4 -(1-wm4-wc4)
+    
     return eq
 
    
 
-x0 = [550.0, 900.0, 900.0, 60.0, 60.0]  # initial guess for m2, m3, m4, m5, m6, m8, m9
+x0 = [550.0, 900.0, 900.0, 60.0, 60.0, 0.5]  # initial guess for m2, m3, m4, m5, m6, m8, m9
 
 solution = scipy.optimize.root(massBalances, x0)
-m2, m4, m6, m8, m9 = solution.x
+m2, m4, m6, m8, m9, vm4 = solution.x
 
 
 wh2 = (const.m1*const.wh1+wh3*m6-wh4*m4)/m2
@@ -98,4 +113,7 @@ stripperen = abs(m4- (m6+m8))
 absorberen = abs(const.m1+m6-(m2+m4))
 print(f"massebalanse over stripperen: {stripperen:.2f}")
 print(f"massebalanse over absorberen: {absorberen:.2f}")
+
+print(f"wm3: {wm3:.4f}")
+print(f"wm4: {wm4:.4f}")
 
