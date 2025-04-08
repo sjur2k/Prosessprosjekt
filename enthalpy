@@ -1,6 +1,7 @@
 import constants5
 from scipy.optimize import root
 import numpy as np
+from heatcapacity import C_p_H2O,C_p_MEA, C_p_CO2,C_p_sol
 
 #numerisk integrasjon
 def numerisk_integrasjon(funksjon, T_start, T_slutt, n=1000):
@@ -281,7 +282,6 @@ def h_strøm9():
 
     h9 = dH_CO2 
     return h9
-
     
 
 #Koker:
