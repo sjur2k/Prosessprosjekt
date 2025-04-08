@@ -48,7 +48,7 @@ def V_1(unknowns):
     U = constants5.U
     m6 =    #mass flow rate 6 (kg/s)
     m4 =    #mass flow rate 4 (kg/s)
-    wm4 =   #mass fraction of MEA in the solution (1-wc4)
+    wm4 =   #mass fraction of MEA in the solution
     wc4 =   #mass fraction of CO2 in the solution
     T4 = constants5.T[3] + 273.15 # K
     T5 = constants5.T[4] + 273.15 # K
