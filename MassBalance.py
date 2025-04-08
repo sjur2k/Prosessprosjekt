@@ -27,7 +27,7 @@ def massBalances(vars):
     wo2 = (const.m1*const.wo1)/m2
     wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
     wh2 = 1-(wn2+wo2+wc2)
-    
+    m9 = const.wcapture*const.m1*const.wc1
 
     
     eq[0] = const.m1*const.wc1+m6*wc6-(m2*wc2+m4*wc4) #
@@ -36,8 +36,7 @@ def massBalances(vars):
 
     eq[2] = m4 - (m6+m8)
     
-    eq[3] = m4*wc4-(m6*wc6+m8*wc8)
-    
+    eq[3] = const.m1-(m2+m9)
     
     
     return eq
