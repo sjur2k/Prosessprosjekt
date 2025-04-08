@@ -10,40 +10,9 @@ wm3 = wm4 =const.waMEA
 wh3 = 0.7 - wc3
 wh4 = 0.7 - wc4
 
+wc6, wm6, wh6 = wc3, wm3, wh3
 
-# #Vektfraksjoner strøm 3 = strøm 6
-
-# wc3 = wf.WtFracCO2(const.alpha3)
-# wm3 = const.waMEA
-# wh3 = wc3-wh3
-wh6 = wh3
-wc6 = wc3
-
-
-# #Vektfraksjoner strøm 4
-# wc4 = wf.WtFracCO2(const.alpha4)
-
-
-# def liquidMassFracs(alpha):
-#     n_MEA = 100.0
-#     mass_MEA = n_MEA * const.MwMEA / 1000
-    
-#     mass_h2o = mass_MEA*(1/0.30 -1)
-    
-#     n_co2 = alpha*n_MEA    
-#     mass_co2 = n_co2 * const.Mw[0] / 1000
-    
-#     total_mass = mass_MEA + mass_h2o + mass_co2
-    
-#     wc = mass_co2 / total_mass
-#     wh = mass_h2o / total_mass
-#     wm = mass_MEA / total_mass
-    
-#     return wc, wh, wm
-
-# wc3, wh3, wm3 = liquidMassFracs(const.alpha3)
-# wc4, wh4, wm4 = liquidMassFracs(const.alpha4)
-# wc6, wh6, wm6 = liquidMassFracs(const.alpha3) #same as wc3, wh3, wm3  
+ 
 
 wc8 = (const.xc8*const.Mw[0] / 1000) / (const.xc8*const.Mw[0] / 1000 + (1-const.xc8)*const.Mw[1] / 1000)
 wh8 = 1-wc8
@@ -54,20 +23,14 @@ def massBalances(vars):
     eq = [0]*4
     
     #massfractions in stream 2 
-    wn2_out = (const.m1*const.wn1)/m2
-    wo2_out = (const.m1*const.wo1)/m2
-    wc2_out = ((1-const.wcapture)*const.m1*const.wc1)/m2
-    wh2_out = 1-(wn2_out+wo2_out+wc2_out)
+    wn2 = (const.m1*const.wn1)/m2
+    wo2 = (const.m1*const.wo1)/m2
+    wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
+    wh2 = 1-(wn2+wo2+wc2)
     
-    m9 = const.wcapture*const.m1*const.wc1 #mass flow CO2 in stream 9
-    m10 = m8*wh8
-    print(f"m10: {m10:.4f}")
-    
-    
-    #massbalances
 
     
-    eq[0] = const.m1*const.wc1+m6*wc6-(m2*wc2_out+m4*wc4) #
+    eq[0] = const.m1*const.wc1+m6*wc6-(m2*wc2+m4*wc4) #
     
     eq[1] = const.m1 +m6 -(m2+m4)
 
@@ -88,29 +51,10 @@ m2, m4, m6, m8= solution.x
 m9 = const.wcapture*const.m1*const.wc1
 
 
-wh2 = (const.m1*const.wh1+wh3*m6-wh4*m4)/m2
-wn2 = (const.m1 / m2) * const.wn1
-wo2 = (const.m1 / m2) * const.wo1
-wc2 = 1 - (wh2 + wn2 + wo2)
-wt2 = wc2 + wh2 + wn2 + wo2
-
-print("\nMassestrømmer [kg/s]:")
-print(f"m2: {m2:.2f}")
-print(f"m3: {m6:.2f}")
-print(f"m4: {m4:.2f}")
-print(f"m5 (=m4): {m4:.2f}")
-print(f"m6: {m6:.2f}")
-print(f"m7 (=m6): {m6:.2f}")
-print(f"m8: {m8:.2f}")
-print(f"m9 (fanget CO2): {m9:.2f}")
-
-print("\nMassefraksjoner i strøm 2 (gass ut):")
-print(f"CO2: {wc2:.4f}")
-print(f"H2O: {wh2:.4f}")
-print(f"N2:  {wn2:.4f}")
-print(f"O2:  {wo2:.4f}")
-print(f"Total: {wt2:.4f}")
-print("---------------------------\n")
+wn2 = (const.m1*const.wn1)/m2
+wo2 = (const.m1*const.wo1)/m2
+wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
+wh2 = 1-(wn2+wo2+wc2)    
 
 
 stripperen = abs(m4- (m6+m8))
@@ -130,6 +74,15 @@ print(f"ut av systemet:{m2+m9:.2f}")
 print(f"inn i systemet:{const.m1}")
 
 
-print(f"wm3: {wm3:.4f}")
-print(f"wm4: {wm4:.4f}")
-
+print("                |            massefraksjoner       ")
+print("     |     m    |        gass         |     væske     ")
+print("Strøm|  [kg/s]  | CO2 | H2O | N2 | O2 |  MEA  |  CO2  ")
+print(f"  1  |    {const.m1}   |{const.wc1:.2f} |{const.wh1:.2f} |{const.wn1:.2f}|{const.wo1:.2f}|   0   |   0   ")
+print(f"  2  |  {m2:.2f}  |{wc2:.2f} |{wh2:.2f} |{wn2:.2f}|{wo2:.2f}|   0   |   0   ")
+print(f"  3  |  {m6:.2f}  |  0  |  0  | 0  | 0  | {wm3:.2f}  | {wc3:.2f} ")
+print(f"  4  |  {m4:.2f}  |  0  |  0  | 0  | 0  | {wm4:.2f}  | {wc4:.2f} ")
+print(f"  5  |  {m4:.2f}  |  0  |  0  | 0  | 0  | {wm4:.2f}  | {wc4:.2f} ")
+print(f"  6  |  {m6:.2f}  |  0  |  0  | 0  | 0  | {wm6:.2f}  | {wc6:.2f} ")
+print(f"  7  |  {m6:.2f}  |  0  |  0  | 0  | 0  | {wm6:.2f}  | {wc6:.2f} ")
+print(f"  8  |  {m8:.3f}  |{wc8:.2f} |{wh8:.2f} | 0  | 0  |   0   |   0   ")
+print(f"  9  |  {m9:.3f}  |{const.wc9:.2f} |  0  | 0  | 0  |   0   |   0   ")
