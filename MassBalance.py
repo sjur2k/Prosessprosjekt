@@ -4,12 +4,12 @@ import constants5 as const
 import WtFrac as wf
 import os
 
-
-
 # ------------------------------------------------------------
 use_mass_approximation = False
 #-------------------------------------------------------------
-
+should_write_to_file = False
+desimaler = 1
+#------------------------------------------------------------
 
 
 if use_mass_approximation:
@@ -109,9 +109,6 @@ print(f"  9  |   {m9:.2f}  |{const.wc9:.2f} |  0  | 0  | 0  |   0   |   0    |  
 
 # Skrive data til fil
 # ------------------------------------------------------------
-should_write_to_file = False
-#------------------------------------------------------------
-
 
 if should_write_to_file:
     m_vec=[const.m1,m2,m6,m4,m4,m6,m6,m8,m9]
@@ -132,10 +129,10 @@ if should_write_to_file:
         
     with open(filename,"w") as f:
         for i in range(len(m_vec)):
-            f.write(f"m{i+1}: {m_vec[i]:.2f}\n")
+            f.write(f"m{i+1}: {m_vec[i]:.{desimaler}f} kg/s\n")
             for j in range(len(w_matrix[i])):
                             if w_matrix[i][j]!=0:
-                                f.write(f"{w_format[j]}{i+1}: {w_matrix[i][j]:.2f}\n")
+                                f.write(f"{w_format[j]}{i+1}: {100*w_matrix[i][j]:.{desimaler}f} %\n")
             f.write("\n")
             
 
