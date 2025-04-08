@@ -13,8 +13,9 @@ use_mass_approximation = False
 
 
 if use_mass_approximation:
-    print("Antar m_MEA >> m_CO2")
-else: print("Antar ikke m_MEA >> m_CO2")
+    print("Antar m_MEA >> m_CO2\n")
+else: print("Antar ikke m_MEA >> m_CO2\n")
+print("---------------------------\n")
 
 wc3 = wf.WtFracCO2(const.alpha3, use_mass_approximation) 
 wc4 = wf.WtFracCO2(const.alpha4, use_mass_approximation)
@@ -31,30 +32,37 @@ wc8 = (const.xc8*const.Mw[0]) / (const.xc8*const.Mw[0] + (1-const.xc8)*const.Mw[
 wh8 = 1-wc8
 
 def massBalances(vars):
+    # Input
     m2, m4, m6, m8 = vars
+    # Output
     eq = [0]*4
-    
 
     #Vektfraksjoner i strøm 2 
     wn2 = (const.m1*const.wn1)/m2
     wo2 = (const.m1*const.wo1)/m2
     wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
     wh2 = 1-(wn2+wo2+wc2)
-    resirkulert_H2O = wh8*m8 # Fra reflukstank til stripper
-
-    eq[0] = const.m1*const.wc1 + m6*wc6 - m2*wc2 - m4*wc4 # CO2-komponentbalanse for absorberen
     
-    eq[1] = const.m1 + m6 - m2 - m4 # Massebalanse for absorber
+    # Massestrøm fra reflukstank til stripper
+    resirkulert_H2O = wh8*m8 
 
-    eq[2] = m4 + resirkulert_H2O - m6 - m8 # Massebalanse for stripper 
+    # CO2-komponentbalanse for absorber
+    eq[0] = const.m1*const.wc1 + m6*wc6 - m2*wc2 - m4*wc4 
     
-    eq[3] = m4*wc4 - m6*wc6 - m8*wc8 # CO2-komponentbalanse for stripperen
+    # Massebalanse for absorber
+    eq[1] = const.m1 + m6 - m2 - m4
+
+    # Massebalanse for stripper    
+    eq[2] = m4 + resirkulert_H2O - m6 - m8 
+    
+    # CO2-komponentbalanse for stripper
+    eq[3] = m4*wc4 - m6*wc6 - m8*wc8 
 
     return eq
 
    
-
-x0 = [550.0, 1000.0, 1000.0, 50.0]  # initial guess for m2, m3, m4, m5, m6, m8, m9
+#Initialbetingelser for optimeringsalgoritmen
+x0 = [550.0, 1000.0, 1000.0, 50.0]
 
 solution = scipy.optimize.root(massBalances, x0)
 m2, m4, m6, m8= solution.x
@@ -65,25 +73,23 @@ wo2 = (const.m1*const.wo1)/m2
 wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
 wh2 = 1-(wn2+wo2+wc2)    
 
-
-stripperen = abs(m4+(1-wc8)*m8-(m6+m8))
-absorberen = abs(const.m1+m6-(m2+m4))
+stripper_massebalanse = abs(m4+(1-wc8)*m8-(m6+m8))
+absorber_massebalanse = abs(const.m1+m6-(m2+m4))
 tot_mass = abs(const.m1-(m2+m9))
-print(f"massebalanse over absorberen: {absorberen:.2f}")
-print(f"Inn i absorberen: {const.m1+m6:.2f}")
-print(f"Ut av absorberen: {m2+m4:.2f}")
-print("---------------------------\n")
 
-print(f"massebalanse over stripperen: {stripperen:.2f}")
-print(f"Inn i stripperen: {m4+(1-wc8)*m8:.2f}")
-print(f"Ut av stripperen: {m6+m8:.2f}")
+# Logging av resultater
+print(f"Massebalanse for absorber: {absorber_massebalanse:.2f}")
+print(f"Inn i absorber: {const.m1+m6:.2f}")
+print(f"Ut av absorber: {m2+m4:.2f}")
+print("---------------------------\n")
+print(f"Massebalanse for stripper: {stripper_massebalanse:.2f}")
+print(f"Inn i stripper: {m4+(1-wc8)*m8:.2f}")
+print(f"Ut av stripper: {m6+m8:.2f}")
 print("---------------------------\n")
 print(f"Total massebalanse: {tot_mass:.2f}")
-print(f"ut av systemet:{m2+m9:.2f}")
-print(f"inn i systemet:{const.m1:.2f}\n")
-
-
-print("                |            massefraksjoner       ")
+print(f"Ut av systemet:{m2+m9:.2f}")
+print(f"Inn i systemet:{const.m1:.2f}\n")
+print("                |            Massefraksjoner       ")
 print("     |     m    |        gass         |         væske     ")
 print("Strøm|  [kg/s]  | CO2 | H2O | N2 | O2 |  MEA  |  H2O   |  CO2  ")
 print(f"  1  |  {const.m1:.2f}  |{const.wc1:.2f} |{const.wh1:.2f} |{const.wn1:.2f}|{const.wo1:.2f}|   0   |   0    |   0   ")
