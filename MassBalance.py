@@ -24,22 +24,22 @@ wc6 = wh6
 # wc4 = wf.WtFracCO2(const.alpha4)
 
 
-def liquidMassFracs(alpha):
-    n_MEA = 100.0
-    mass_MEA = n_MEA * const.MwMEA / 1000
+# def liquidMassFracs(alpha):
+#     n_MEA = 100.0
+#     mass_MEA = n_MEA * const.MwMEA / 1000
     
-    mass_h2o = mass_MEA*(1/0.30 -1)
+#     mass_h2o = mass_MEA*(1/0.30 -1)
     
-    n_co2 = alpha*n_MEA    
-    mass_co2 = n_co2 * const.Mw[0] / 1000
+#     n_co2 = alpha*n_MEA    
+#     mass_co2 = n_co2 * const.Mw[0] / 1000
     
-    total_mass = mass_MEA + mass_h2o + mass_co2
+#     total_mass = mass_MEA + mass_h2o + mass_co2
     
-    wc = mass_co2 / total_mass
-    wh = mass_h2o / total_mass
-    wm = mass_MEA / total_mass
+#     wc = mass_co2 / total_mass
+#     wh = mass_h2o / total_mass
+#     wm = mass_MEA / total_mass
     
-    return wc, wh, wm
+#     return wc, wh, wm
 
 # wc3, wh3, wm3 = liquidMassFracs(const.alpha3)
 # wc4, wh4, wm4 = liquidMassFracs(const.alpha4)
@@ -57,6 +57,7 @@ def massBalances(vars):
     wo2_out = (const.m1*const.wo1)/m2
     wh2_out = (const.m1*const.wh1+wh6*m6-wh4*m4)/m2
     wc2_out = 1-(wn2_out + wo2_out + wh2_out)
+    wm4 = (m6/m4)*wm3
     
     
     
@@ -67,7 +68,7 @@ def massBalances(vars):
     
     eq[1] = m4 - (m6+m8) #m6
     
-    eq[2] = const.m1 + m6 -(m2+m4)#m4
+    eq[2] = wm3*m6-wm4*m4#m4
     
     eq[3] = m9-const.wcapture*const.m1*const.wc1 #m9
     
@@ -89,6 +90,7 @@ wn2 = (const.m1 / m2) * const.wn1
 wo2 = (const.m1 / m2) * const.wo1
 wc2 = 1 - (wh2 + wn2 + wo2)
 wt2 = wc2 + wh2 + wn2 + wo2
+wm4 = (m6/m4)*wh3
 
 print("\nMassestrømmer [kg/s]:")
 print(f"m2: {m2:.2f}")
