@@ -127,7 +127,7 @@ if should_write_to_file:
         filename = "massbalance_with_approx.txt"
     else: filename = "massbalance_no_approx.txt"
         
-    with open(filename,"w") as f:
+    with open(f"{os.getcwd()}/sim_data/{filename}","w") as f:
         for i in range(len(m_vec)):
             f.write(f"m{i+1}: {m_vec[i]:.{desimaler}f} kg/s\n")
             for j in range(len(w_matrix[i])):
