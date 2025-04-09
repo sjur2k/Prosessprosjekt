@@ -1,8 +1,29 @@
 import constants5
 from scipy.optimize import root
 import numpy as np
-import MassBalance as mb 
-from heatcapacity import C_p_H2O,C_p_MEA, C_p_CO2,C_p_sol
+import MassBalance as mb
+
+useApprox = False
+if useApprox:
+    filename = 'sim_data/massbalance_with_approx.txt'
+else:
+    filename = 'sim_data/massbalance_no_approx.txt'
+
+massestrømmer = {}  # Sett feks m3 = massestrømmer["m3"]
+massefraksjoner = {}  # Sett feks wc5 = massefraksjoner["wc5"]
+
+with open(filename, 'r') as f:
+    for line in f:
+        line = line.strip()
+        if line.startswith("m"):
+            key,value = line.split(":")
+            massestrømmer[key] = float(value.split("kg/s")[0].strip())
+        elif line.startswith("w"):
+            key, value = line.split(":")
+            massefraksjoner[key.strip()]= round(float(value.split("%")[0].strip())/100.0,2)
+
+print("Massestrømmer:\n",massestrømmer,"\n")
+print("Massefraksjoner:\n",massefraksjoner)
 
 #numerisk integrasjon
 def numerisk_integrasjon(funksjon, T_start, T_slutt, n=1000):
