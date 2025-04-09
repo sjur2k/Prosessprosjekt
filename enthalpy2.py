@@ -28,50 +28,49 @@ def cp_h(T):
 
 #Ren MEA
 def cp_m(T):
+    T = T + 273.15 # K
     return const.Aa + const.Ba*T + const.Ca*T**2
 
 #CO2 i MEA-løsning
 def cp_c(T):
+    T = T + 273.15 # K
     return const.Ac + const.Bc*T
 
-#MEA-løsning (aq)
-def cp_sol(T, is_rich):
+#MEA-løsning
+def cp_sol(T , is_rich): #([Celsius], Bool)
     if is_rich:
         key = "wm4"
     else:
         key = "wm3"
     wm = w[key]
-    return (1-wm)*cp_h(T)+wm*cp_m(T)+wm*(1-wm)*(const.As + const.Bs*T + const.Cs*wm*(T-273.15)**(-1.5859))
-def choose_cp(T, key):
-    key = key[0:2]
-    if key == "wc":
-        return cp_c(T)
-    elif key == "wh":
-        return cp_h(T)
-    elif key == "wm":
-        return cp_sol(T, True)
-    elif key == "wn":
-        return cp_c(T)
-    elif key == "wo":
-        return cp_c(T)
-    else:
-        print("Feil i strømnummer")
-        return np.nan
-def cp_i(T, i):
+    return (1-wm)*cp_h(T)+wm*cp_m(T)+wm*(1-wm)*(const.As + const.Bs*T + const.Cs*wm*(T)**(-1.5859))
+
+#Varmekapasitet kJ/(kg K) for strøm i
+def cp_i(T, i): #([Celsius], int)
+    cp = 0
     if i<1 or i>9:
         print("Feil i strømnummer")
         return np.nan
     elif i in [1,2,8,9]:
-        return 
+        keys=["wc","wh","wn","wo"]
+        for j in range(len(keys)):
+            key = f"{keys[j]}{i}"
+            if key in w:
+                cp += w[key]*const.cpg[j] # cpg[j] er omtrent lik i temperaturområdet 45C-107C
     else:
-        cp = 0
-        keys = [f"wc{i}", f"wm{i}"]
-        for key in keys:
-            cp += w[key]*cp_sol(T, key=="wm4")
-        
+        is_rich = False
+        if i in [3,6,7]:
+            is_rich = True
+        cp += w[f"wc{i}"]*cp_c(T)
+        cp += w[f"wm{i}"]*cp_sol(T, is_rich)
+    return cp 
 
-#Tar T7 inn som Celsiusgrader
-def DeltaT_lm_V1(T7):
+#Snitt varmekapasitet mellom T1 og T2 for strøm i
+def mean_cp_i(T1,T2,i): #([Celsius], [Celsius], int)
+    integral = sp.integrate.quad(lambda T: cp_i(T,i), T1, T2)[0]
+    return integral / (T2 - T1)
+
+def DeltaT_lm_V1(T7): #([Celsius])
     DeltaT1 = const.T6 - const.T5
     DeltaT2 = T7 - const.T4
     if DeltaT2 == 0:
@@ -82,7 +81,7 @@ def DeltaT_lm_V1(T7):
     else:
         return (DeltaT1-DeltaT2) / np.log(DeltaT1/DeltaT2)
 
-def V1(vars):
+""" def V1(vars):
     T7 = vars[0]
     m3 = m["m3"]
     m4 = m["m4"]
@@ -95,4 +94,4 @@ def V1(vars):
 
 
     deltaT_lm = DeltaT_lm_V1(T7)
-return "something"
+return "something" """
