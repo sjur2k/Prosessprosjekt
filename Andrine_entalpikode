@@ -1,0 +1,280 @@
+import constants5
+from scipy.integrate import quad
+import math as m
+import MassBalance as mb
+from scipy.optimize import root
+
+
+# Varmekapasiteter
+
+#Varmekapasitet for H2O(l) (kJ/kg)
+def cp_h2o(T): 
+    return constants5.Aw+constants5.Bw*T+constants5.Cw*T**2
+
+
+#Varmekapasitet for ren MEA (kJ/kg)
+def cp_mea(T): 
+    return constants5.Aa + constants5.Ba * T + constants5.Ca * T**2
+
+
+#Varmekapasitet for CO2 i MEA_løsning (kJ/kg)
+def cp_co2(T): 
+    return constants5.Ac+constants5.Bc*T
+
+
+#Varmekapasitet for MEA_løsning (kJ/kg)
+def cp_sol(T):
+    cp_H2O = cp_h2o(T)
+    cp_MEA = cp_mea(T)
+    w_MEA  = constants5.waMEA
+    return (1-w_MEA)*cp_H2O + w_MEA*cp_MEA + w_MEA*(1-w_MEA)*(constants5.As + constants5.Bs*T + constants5.Cs*w_MEA*(T-273.15)**(-1.5859))
+
+#Funksjon for Delta_T_LM
+def Delta_T_LM(Th_inn, Th_ut, Tc_inn, Tc_ut):
+    return ( (Th_inn - Tc_ut) - (Th_ut - Tc_inn) ) / (m.log(abs((Th_ut - Tc_ut) /( Th_ut - Tc_inn))))
+
+
+#Utregning av T7 og Areal av varmeveksler
+def V_1(unknowns):
+
+    U  = constants5.U #W/m2K
+    m6 = mb.m6
+    m4 = mb.m6
+    T4 = constants5.T[3] + 273.15
+    T5 = constants5.T[4] + 273.15
+    T6 = constants5.T[5] + 273.15
+
+    T7 = unknowns[0]
+    A  = unknowns[1]
+
+
+    q = m6 * quad(cp_sol,T5,T6)[0]
+    Tdlm = Delta_T_LM(T6, T7, T5, T4)
+
+    eq1 = (U * A * Tdlm) - (q*1000)
+    eq2 = (m4 * quad(cp_sol,T4,T7)[0])*1000 - (q*1000)
+    return [eq1,eq2]
+
+
+A = 200
+T = 300
+
+guess = [T,A]
+sol = root(V_1, guess)
+
+T7 = sol.x[0] #K
+A = sol.x[1] #m^2
+
+
+
+# Entalpier
+
+def h_strøm1():
+    Tref = constants5.Tref_C
+    T1 = constants5.T[0] #Temeratur i strøm 1
+
+    # Dannelsesentalpi ganget med massefraksjon
+    hf_co2 = constants5.wc1*constants5.hf[0] 
+    hf_h2o = constants5.wh1*constants5.hf[1] 
+    # Dannelsesentalpi for O2 og N2 = 0
+
+
+    #massefraksjon * varmekapasitet * (T1-Tref)
+    dH_co2 = constants5.wc1*constants5.cpg[0]*(T1-Tref)
+    dH_h2o = constants5.wh1*constants5.cpg[1]*(T1-Tref)
+    dH_n2  = constants5.wn1*constants5.cpg[2]*(T1-Tref)
+    dH_o2  = constants5.wo1*constants5.cpg[3]*(T1-Tref)
+
+    #Legger sammen dannelsesentalpiene og endringene i entalpi for total entalpi
+    h1 = hf_co2 + hf_h2o + dH_co2 + dH_h2o + dH_n2 + dH_o2
+
+    return h1
+
+
+def h_strøm2():
+    Tref = constants5.Tref_C
+    T2 = constants5.T[1]
+
+    w2_co2 = mb.wc2
+    w2_h2o = mb.wh2
+    w2_n2  = mb.wn2
+    w2_o2  = mb.wo2
+
+    # Dannelsesentalpi ganget med massefraksjon
+    hf_co2 = w2_co2*constants5.hf[0] # Hf0 CO2*m1*w1CO2
+    hf_h2o = w2_h2o*constants5.hf[1] # Hf0 H2O*m1*w1H2O
+    # Dannelsesentalpi for O2 og N2 = 0
+
+    #Endring i entalpi fra 25 -> 40 grader for alle kompontenter = endring i entalpi i løsning
+    #massefraksjon * varmekapasitet * (T1-Tref)
+    dH_co2 = w2_co2*constants5.cpg[0]*(T2-Tref)
+    dH_h2o = w2_h2o*constants5.cpg[1]*(T2-Tref)
+    dH_n2  = w2_n2*constants5.cpg[2]*(T2-Tref)
+    dH_o2  = w2_o2*constants5.cpg[3]*(T2-Tref)
+
+    #Legger sammen dannelsesentalpiene og endringene i entalpi for total entalpi
+    h2 = hf_co2 + hf_h2o + dH_co2 + dH_h2o + dH_n2 + dH_o2
+
+    return h2
+
+
+# h(sol+CO2)(T)
+def hf_sol_co2_strøm3(T):
+    # vil brukes for strøm 3, 6 og 7
+    
+    w_co2 = mb.wc3
+    w_sol = 1-w_co2     #mb.wm3, alt som ikke er CO2 er MEA-løsning?
+
+    d_abs_h_co2 = (constants5.habs_m*1000)/constants5.Mw[0]  #konverterer fra J/mol til J/kg
+
+    integrert_sol = quad(cp_sol, constants5.Tref_K, T)
+    integrert_co2 = quad(cp_co2, constants5.Tref_K, T)
+
+    Ledd_1 = w_sol*(constants5.hfsol + integrert_sol[0])
+    Ledd_2 = w_co2*(constants5.hf[0] + integrert_co2[0])
+    Ledd_3 = w_co2 * d_abs_h_co2
+
+    return Ledd_1 + Ledd_2 + Ledd_3
+
+
+def hf_sol_co2_strøm4(T):
+    # vil brukes for strøm 4 og 5
+    w_co2 = mb.wc4
+    w_sol = 1-w_co2    #mb.wm4
+
+    d_abs_h_co2 = (constants5.habs_m*1000)/constants5.Mw[0]  #konverterer fra J/mol til J/kg
+
+
+    integrert_sol = quad(cp_sol, constants5.Tref_K, T)
+    integrert_co2 = quad(cp_co2, constants5.Tref_K, T)
+
+    Ledd_1 = w_sol*(constants5.hfsol + integrert_sol[0])
+    Ledd_2 = w_co2*(constants5.hf[0] + integrert_co2[0])
+    Ledd_3 = w_co2*(d_abs_h_co2)
+
+    return Ledd_1 + Ledd_2 + Ledd_3
+
+
+def h_strøm8():
+
+    Tref = constants5.Tref_C
+    T8 = constants5.T[7]
+
+    w8_co2 = mb.wc8
+    w8_h2o = mb.wh8
+
+    # Dannelsesentalpi ganget med massefraksjon
+    hf_co2 = w8_co2 * constants5.hf[0] 
+    hf_h2o = w8_h2o * constants5.hf[1]  
+    # Dannelsesentalpi for O2 og N2 = 0
+
+    #endring i entalpi ved økning av temp fra 25 -> 122 grader
+    #massefraksjon * varmekapasitet * (T1-Tref)
+    dH_co2 = w8_co2 * constants5.cpg[0] * (T8 - Tref)
+    dH_h2o = w8_h2o * constants5.cpg[1] * (T8 - Tref)
+
+    #total entalpi
+    h8 = hf_co2 + hf_h2o + dH_co2 + dH_h2o
+
+    return h8
+
+
+def h_strøm9():
+
+    Tref = constants5.Tref_C
+    T9 = constants5.T[8]
+
+    w9_co2 = constants5.wc9
+
+    # Dannelsesentalpi ganget med massefraksjon
+    hf_co2 = w9_co2 * constants5.hf[0] 
+    # Dannelsesentalpi for O2 og N2 = 0
+
+    # økning av temp fra 25 -> 25 grader
+    # m_i*cp_i*(T2-T1)
+    dH_co2 = w9_co2 * constants5.cpg[0] * (T9 - Tref)
+
+    h9 = hf_co2 + dH_co2
+
+    return h9
+
+
+# Varmevekslere
+def Qh(): #for V-2
+    m7 = mb.m6 #strøm 7 
+    T3 = constants5.T[2] + 273.15
+    cph = quad(cp_sol, T7, T3)[0] #kJ/kg
+
+    Q = m7*cph*(T7-T3)
+    return Q #kJ/s
+
+
+def m10():
+    T11 = constants5.T[10] #temp strøm 11
+    T10 = constants5.T[9] #temp strøm 10
+    cpc = quad(cp_h2o, T11, T10)[0]
+    Q = -Qh()
+    m = Q/(cpc*(T11-T10)) #kg/s
+
+    return m
+
+
+def QV3():
+    m8 = mb.m8
+    w8_co2 = mb.wc8
+    w8_h2o = mb.wh8
+
+    T8 = constants5.T[7] #[C]
+    T9  = constants5.T[8] #[C]
+
+    cp8_co2= constants5.cpg[0]
+    cpg_h20= constants5.cpg[1]
+    dHvap = constants5.dHfus - constants5.dHsub #dHvap for H2O (kJ/mol)
+
+    q1 = m8 * w8_co2 * cp8_co2 * (T9 - T8) # dH for CO2
+    q2 = (m8 * w8_h2o * dHvap * 1000)/constants5.Mw[1] # kondensering av vann (J/kg)
+    q3 = m8 * w8_h2o * cpg_h20 * (T9 - T8) # dH H2O(g)
+
+    Q = (q1 + q2 + q3)/1000 #kJ/s
+
+    return Q
+
+
+# koker V-4
+def getheatV4():
+    m5 = mb.m4
+    m6 = mb.m6
+    m9 = mb.m9
+
+    H5 = m5*hf_sol_co2_strøm4(constants5.T[4]+273)
+    H6 = m6*hf_sol_co2_strøm3(constants5.T[5]+273)
+    H9 = m9*h_strøm9()
+    Q_V3 = QV3()
+
+    #V4 = H9 + H6 - (H5 + V3)
+    Q_V4 = (H9 + H6 - (H5 + Q_V3)) #kJ/s
+
+    return Q_V4
+
+
+
+#printer svar
+
+print(f"Entalpier i strømmer:")
+print(f"Entalpi strøm 1:  {h_strøm1():.1f} kJ/kg")
+print(f"Entalpi strøm 2:  {h_strøm2():.1f} kJ/kg")
+print(f"Entalpi strøm 3:  {hf_sol_co2_strøm3(constants5.T[2]+273):.1f} kJ/kg")
+print(f"Entalpi strøm 4:  {hf_sol_co2_strøm4(constants5.T[3]+273):.1f} kJ/kg")
+print(f"Entalpi strøm 5:  {hf_sol_co2_strøm4(constants5.T[4]+273):.1f} kJ/kg") 
+print(f"Entalpi strøm 6:  {hf_sol_co2_strøm3(constants5.T[5]+273):.1f} kJ/kg") 
+print(f"Entalpi strøm 7:  {hf_sol_co2_strøm3(int(sol.x[0])):.1f} kJ/kg")       
+print(f"Entalpi strøm 8:  {h_strøm8():.1f} kJ/kg")
+print(f"Entalpi strøm 9:  {h_strøm9():.1f} kJ/kg")
+print("")
+print('Andre beregnede verdier:')
+print(f'Temperatur i strøm 7: {T7:.1f} K')
+print(f'Areal av varmeveksler V-1: {A:.1f} m^2')
+print(f'Varme ut av varmeveksler V-2: {Qh():.1f} kW')
+print(f'Masse strøm 10 og 11 {m10():.1f} Kg/s')
+print(f'Varme som overføres i V-3: {QV3():.1f} kW')
+print(f'Varme som overføres i V-4: {getheatV4():.1f} kW')
