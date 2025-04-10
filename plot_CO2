@@ -1,0 +1,95 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import constants5  
+
+
+# Denne funksjonen finner a, altså alpha
+def finn_a(co2_abs):
+    a_liste = []
+    for i in range(len(co2_abs)):
+        a = CO2_abs[i] / constants5.waMEA  #Ligning 3 i prosjektbeskrivelse
+        a_liste.append(a)
+    return a_liste
+
+def pCO2_calc(a_liste,T):
+    pCO2_liste = []
+
+    for i in range(len(a_liste)):
+        K2 = 3.70 * 10 ** 4  # K2 for 298K finnet i tabell 4 i prosjektbeskrivelsen
+
+        # Henter inn konstanter for å finne Henrys konstant
+        C1 = constants5.Hc[0]
+        C2 = constants5.Hc[1]
+        C3 = constants5.Hc[2]
+        C4 = constants5.Hc[3]
+        C5 = constants5.Hc[4]
+
+        #Ligning 8 i prosjektbeskrivelse
+        KH = (C1 + (C2 * a_liste[i]) / T) ** (C3 * a_liste[i] ** 2 + C4 / T + (C5 * a_liste[i]) / (T ** 2))
+
+        pCO2 = (KH * a_liste[i] ** 2) / (K2 * (1 - 2 * a_liste[i]) ** 2)  #Ligning 4
+        pCO2_liste.append(pCO2)
+
+    return pCO2_liste
+
+#plot
+def plot1(a, pCO2):
+    plt.plot(a, pCO2, color = "blue")
+    plt.plot(a, pCO2, "o",color = "blue")
+    plt.title(r'$pCO_2$ vs loading, $\alpha$')
+    plt.grid()
+    plt.xlabel(r'loading, $\alpha$ [-]')
+    plt.ylabel(r'$pCO_2$ [kPa]')  
+    plt.show()
+    return
+
+
+CO2_abs = [None] * 50  # mengden CO2 absorbert 
+for i in range(50):
+    CO2_abs[i] = 10 ** -3 + i * 10 ** -3
+
+a    = finn_a(CO2_abs)  # beregnet a
+pCO2 = pCO2_calc(a,298)     # beregnet pCO2
+
+plot1(a, pCO2)
+
+
+T_K2 = [[273, 3.98e5], [298, 3.70e4], [313, 1.14e4], [333, 2.43e3], [353, 5.78e2], [373, 2.46e2], [393, 4.08e1], [423, 6.74e0]]
+
+def Henry_KH(T_K2, a):
+    KH = []
+    c = [constants5.Hc[0], constants5.Hc[1], constants5.Hc[2], constants5.Hc[3], constants5.Hc[4]]
+    for i in range(len(T_K2)):
+        KH.append((c[0] + c[1] * a * (T_K2[i][0])**(-1)) *
+                  np.exp(c[2] * a**2 + c[3] * (T_K2[i][0])**(-1) + c[4] * a * (T_K2[i][0])**(-2)))
+    return KH
+
+def P_CO2(Kh, T_K2, a):
+    PCO2 = []
+    for i in range(len(T_K2)):
+        PCO2.append(((Kh[i] * (a)**2) / (T_K2[i][1] * (1 - 2 * a)**2)) / 1e5)  # Konvertering fra Pa til bar
+    return PCO2
+
+def plot2(T, PCO2_list, alpha_values):
+    colors = ['red', 'blue', 'green', 'purple', 'orange']
+    plt.figure(figsize=(8, 6))
+    for i, PCO2 in enumerate(PCO2_list):
+        plt.plot(T, PCO2, 'o-', color=colors[i], label=f'α = {alpha_values[i]}')
+    plt.xlabel(r'Temperatur, $T$ [K]')
+    plt.ylabel(r'Partieltrykk (CO2), $P$ [bar]')
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+# Definer verdiene for alpha
+alpha_values = [0.2, 0.4, 0.6, 0.8, 1.0]
+
+T = [temp[0] for temp in T_K2]
+PCO2_list = []
+
+for alpha in alpha_values:
+    KH = Henry_KH(T_K2, alpha)
+    PCO2 = P_CO2(KH, T_K2, alpha)
+    PCO2_list.append(PCO2)
+
+plot2(T, PCO2_list, alpha_values)
