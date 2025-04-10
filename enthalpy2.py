@@ -148,6 +148,40 @@ def V1(vars):
     eq[1] = A  - (Q/(const.U*deltaT_lm))
     return eq
 
-sol = sp.optimize.root(V1, [T6-15, 190]).x
-print(sol)
-print(mean_cp_i(T5,T6,4))
+def h_i(i):
+    h=0
+    T_ref = const.Tref_C
+    T = const.T[i-1]
+    if i < 1 or i > 9:
+        print("Feil i strømnummer")
+        return np.nan
+    elif i in [1,2,8,9]:
+        keys=["wc","wh","wn","wo"]
+        for j in range(len(keys)):
+            key = f"{keys[j]}{i}"
+            if key in w:
+                h += w[key]*const.hf[j] #Dannelsesentalpi
+                h += w[key]*const.cpg[j]*(T-T_ref) #Entalpi temperaturøkning
+    else:
+        is_rich = False
+        if i in [3,6,7]:
+            is_rich = True
+        h += (1-w[f"wc{i}"])*(const.hfsol+(T-T_ref)*mean_cp_sol(T_ref,T,is_rich)) #Entalpi for MEA-løsning
+        h += w[f"wc{i}"]*(const.hf[0]+(T-T_ref)*mean_cp_c(T_ref,T)) #Entalpi for CO2 i MEA-løsning
+        h += w[f"wc{i}"]*const.habs_m*(1000/const.Mw[0]) #Ekstra entalpi for absorpsjon av CO2
+    return h
+
+T7, A = sp.optimize.root(V1, [T6-15, 190]).x
+const.T[6] = T7
+m10 = np.abs((T3-T7)/(T11-T10)) * (mean_cp_i(T7,T3,7)/mean_cp_h(T10,T11)) * m["m7"]
+
+Q_V3 = m["m8"]*(w["wc8"]*(T9-T8)+w["wh8"]*(const.dHfus-const.dHsub)*(1000/const.Mw[1])) 
+Q_V4 = (Q_V3 + h_i(5)*m["m5"])-(h_i(6)*m["m6"] + h_i(9)*m["m9"])
+
+print(f"T7 = {round(T7,2)}°C")
+print(f"A = {round(A,2)}m^2")
+print(f"m10 = m11 = {round(m10,2)} kg/s")
+for i in range(9):
+    print(f"h_{i+1}: {round(h_i(i+1),2)} kJ/kg")
+print(f"Q_V3 = {round(Q_V3,2)} kJ")
+print(f"Q_V4 = {round(Q_V4,2)} kJ")
