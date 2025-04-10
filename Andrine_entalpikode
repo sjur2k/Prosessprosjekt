@@ -53,7 +53,7 @@ def V_1(unknowns):
     Tdlm = Delta_T_LM(T6, T7, T5, T4)
 
     eq1 = (U * A * Tdlm) - (Q)
-    eq2 = (m6 * quad(cp_sol,T6,T7)[0] * (T6 - T7)) *1000 - Q
+    eq2 = (m6 * quad(cp_sol,T6,T7)[0] * (T6 - T7)) - Q
     
     return [eq1,eq2]
 
