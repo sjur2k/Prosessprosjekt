@@ -148,6 +148,7 @@ def V1(vars):
     eq[1] = A  - (Q/(const.U*deltaT_lm))
     return eq
 
+# Spesifikk entalpi i strøm $i$
 def h_i(i):
     h=0
     T_ref = const.Tref_C
@@ -178,6 +179,32 @@ m10 = np.abs((T3-T7)/(T11-T10)) * (mean_cp_i(T7,T3,7)/mean_cp_h(T10,T11)) * m["m
 Q_V3 = m["m8"]*(w["wc8"]*(T9-T8)+w["wh8"]*(const.dHfus-const.dHsub)*(1000/const.Mw[1])) 
 Q_V4 = (Q_V3 + h_i(5)*m["m5"])-(h_i(6)*m["m6"] + h_i(9)*m["m9"])
 
+# Ettstegs kompresjon
+def kompresjon_1():
+    Tinn = T9+273.15 # K
+    g = 1.3 # Adiabatisk eksponent for CO2: ca 1.3 ved 20C
+    pb = 20 # Bar
+    Tut = 303 # K
+    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1)) # C
+    return Tb-273.15 # C
+
+# Trestegs kompresjon
+def kompresjon_3():
+    T_out = {}
+    Tinn = T9 + 273.15 # K
+    Tc = Te = 303
+    pb = 4 # Bar
+    pd = 8 # Bar
+    pf = 20 # Bar
+    g = 1.3 # Adiabatisk eksponent for CO2: ca 1.3 ved 20C
+    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1))
+    Td = Tc*(1+(1/const.eta)*((pd/pb)**((g-1)/g)-1))
+    Tf = Td*(1+(1/const.eta)*((pf/pd)**((g-1)/g)-1))
+    T_out["Tb"] = Tb-273.15
+    T_out["Td"] = Td-273.15
+    T_out["Tf"] = Tf-273.15
+    return T_out
+
 print(f"T7 = {round(T7,2)}°C")
 print(f"A = {round(A,2)}m^2")
 print(f"m10 = m11 = {round(m10,2)} kg/s")
@@ -185,3 +212,6 @@ for i in range(9):
     print(f"h_{i+1}: {round(h_i(i+1),2)} kJ/kg")
 print(f"Q_V3 = {round(Q_V3,2)} kJ")
 print(f"Q_V4 = {round(Q_V4,2)} kJ")
+print(f"Tb ved 1stegs kompresjon: {round(kompresjon_1(),2)}°C")
+for key,val in kompresjon_3().items():
+    print(f"{key} ved 3stegs kompresjon: {round(float(val),2)}°C")
