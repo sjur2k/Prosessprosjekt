@@ -28,7 +28,6 @@ def massBalances(vars):
     wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
     wh2 = 1-(wn2+wo2+wc2)
     m9 = const.wcapture*const.m1*const.wc1
-
     
     eq[0] = const.m1*const.wc1+m6*wc6-(m2*wc2+m4*wc4) #
     
@@ -48,6 +47,8 @@ x0 = [550.0, 900.0, 900.0, 60.0]  # initial guess for m2, m3, m4, m5, m6, m8, m9
 solution = scipy.optimize.root(massBalances, x0)
 m2, m4, m6, m8= solution.x
 m9 = const.wcapture*const.m1*const.wc1
+
+print(f"m8: {m8:.2f}")
 
 
 wn2 = (const.m1*const.wn1)/m2
