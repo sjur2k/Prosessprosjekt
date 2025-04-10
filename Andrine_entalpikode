@@ -31,7 +31,7 @@ def cp_sol(T):
 
 #Funksjon for Delta_T_LM
 def Delta_T_LM(Th_inn, Th_ut, Tc_inn, Tc_ut):
-    return ( (Th_inn - Tc_ut) - (Th_ut - Tc_inn) ) / (m.log(abs((Th_ut - Tc_ut) /( Th_ut - Tc_inn))))
+    return ( (Th_inn - Tc_ut) - (Th_ut - Tc_inn) ) / (m.log(abs((Th_inn - Tc_ut) /( Th_ut - Tc_inn))))
 
 
 #Utregning av T7 og Areal av varmeveksler
@@ -40,20 +40,23 @@ def V_1(unknowns):
     U  = constants5.U #W/m2K
     m6 = mb.m6
     m4 = mb.m6
-    T4 = constants5.T[3] + 273.15
-    T5 = constants5.T[4] + 273.15
-    T6 = constants5.T[5] + 273.15
+    T4 = constants5.T[3] + 273.15 #[K]
+    T5 = constants5.T[4] + 273.15 #[K]
+    T6 = constants5.T[5] + 273.15#[K]
 
     T7 = unknowns[0]
     A  = unknowns[1]
 
+    cp_m4 = w_co2_45 * quad(cp_co2,T4,T5)[0] + w_sol_45 * quad(cp_sol,T4,T5)[0]
 
-    q = m6 * quad(cp_sol,T5,T6)[0]
+    Q = m4 * cp_m4 * (T5 - T4) 
     Tdlm = Delta_T_LM(T6, T7, T5, T4)
 
-    eq1 = (U * A * Tdlm) - (q*1000)
-    eq2 = (m4 * quad(cp_sol,T4,T7)[0])*1000 - (q*1000)
+    eq1 = (U * A * Tdlm) - (Q)
+    eq2 = (m6 * quad(cp_sol,T6,T7)[0] * (T6 - T7)) *1000 - Q
+    
     return [eq1,eq2]
+
 
 
 A = 200
