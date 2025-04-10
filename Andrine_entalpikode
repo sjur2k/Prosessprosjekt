@@ -47,7 +47,7 @@ def V_1(unknowns):
     T7 = unknowns[0]
     A  = unknowns[1]
 
-    cp_m4 = w_co2_45 * quad(cp_co2,T4,T5)[0] + w_sol_45 * quad(cp_sol,T4,T5)[0]
+    cp_m4 = w_co2_45 * quad(cp_co2,T4,T5)[0] + w_sol_45 * quad(cp_sol,T4,T5)[0] #w_co2_45 er massefraksjonen til CO2 i strøm 4 og 5. w_sol_45 er massefraksjonene til MEA og vann lagt sammen
 
     Q = m4 * cp_m4 * (T5 - T4) 
     Tdlm = Delta_T_LM(T6, T7, T5, T4)
