@@ -5,7 +5,7 @@ import numpy as np
 T1,T2,T3,T4,T5,T6 = const.T[0:6]
 T8,T9,T10,T11 = const.T[7:11]
 
-useApprox = True
+useApprox = False
 if useApprox:
     filename = 'sim_data/massbalance_with_approx.txt'
 else:
@@ -30,10 +30,12 @@ def cp_h(T):
     return const.Aw + const.Bw*T + const.Cw*T**2
 
 #Snitt for ren H20(g)
-def mean_cp_h(T1,T2):
-    T1 = T1 + 273.15 # K
-    T2 = T2 + 273.15 # K
-    return const.Aw + (const.Bw/2)*(T2**2-T1**2)/(T2-T1) + (const.Cw/3)*((T2**3-T1**3)/(T2-T1))
+def mean_cp_h(Ti,Tf):
+    if Ti<Tf:
+        Ti,Tf = Tf,Ti
+    Ti += 273.15 # K
+    Tf += 273.15 # K
+    return const.Aw + (const.Bw/2)*(Tf**2-Ti**2)/(Tf-Ti) + (const.Cw/3)*((Tf**3-Ti**3)/(Tf-Ti))
 
 #Ren MEA
 def cp_m(T):
@@ -41,10 +43,12 @@ def cp_m(T):
     return const.Aa + const.Ba*T + const.Ca*T**2
 
 #Snitt for ren MEA
-def mean_cp_m(T1,T2):
-    T1 = T1 + 273.15 # K
-    T2 = T2 + 273.15 # K
-    return const.Aa + (const.Ba/2)*(T2**2-T1**2)/(T2-T1) + (const.Ca/3)*((T2**3-T1**3)/(T2-T1))
+def mean_cp_m(Ti,Tf):
+    if Ti<Tf:
+        Ti,Tf = Tf,Ti
+    Ti += 273.15 # K
+    Tf += 273.15 # K
+    return const.Aa + (const.Ba/2)*(Tf**2-Ti**2)/(Tf-Ti) + (const.Ca/3)*((Tf**3-Ti**3)/(Tf-Ti))
 
 #CO2 i MEA-løsning
 def cp_c(T):
@@ -52,10 +56,12 @@ def cp_c(T):
     return const.Ac + const.Bc*T
 
 #Snitt for CO2 i MEA-løsning
-def mean_cp_c(T1,T2):
-    T1 = T1 + 273.15 # K
-    T2 = T2 + 273.15 # K
-    return const.Ac + (const.Bc/2)*(T2**2-T1**2)/(T2-T1)
+def mean_cp_c(Ti,Tf):
+    if Ti<Tf:
+        Ti,Tf = Tf,Ti
+    Ti += 273.15 # K
+    Tf += 273.15 # K
+    return const.Ac + (const.Bc/2)*(Tf**2-Ti**2)/(Tf-Ti)
 
 #MEA-løsning
 def cp_sol(T , is_rich): #([Celsius], Bool)
@@ -64,20 +70,22 @@ def cp_sol(T , is_rich): #([Celsius], Bool)
     else:
         key = "wm3"
     wm = w[key]
-    return (1-wm)*cp_h(T)+wm*cp_m(T)+wm*(1-wm)*(const.As + const.Bs*T + const.Cs*wm*(T)**(-1.5859))
+    return (1-wm)*cp_h(T)+wm*cp_m(T)+wm*(1-wm)*(const.As + const.Bs*(T+273.15) + const.Cs*wm*(T)**(-1.5859))
 
 #Snitt for MEA-løsning
-def mean_cp_sol(T1,T2, is_rich):
+def mean_cp_sol(Ti,Tf, is_rich):
+    if Ti<Tf:
+        Ti,Tf = Tf,Ti
     if is_rich:
         key = "wm4"
     else:
         key = "wm3"
     wm = w[key]
-    part1 = (1-wm)*mean_cp_h(T1,T2) # Konverterer til K inni
-    part2 = wm*mean_cp_m(T1,T2) # Konverterer til K inni
-    T1 = T1 + 273.15 # K
-    T2 = T2 + 273.15 # K
-    part3 = wm*(1-wm)*(const.As + (const.Bs/2)*(T2**2-T1**2)/(T2-T1) + ((const.Cs*wm)/(-0.5859))*((T2-273.15)**(-0.5859)-(T1-273.15)**(-0.5859))/(T2-T1))
+    part1 = (1-wm)*mean_cp_h(Ti,Tf) # Konverterer til K inni
+    part2 = wm*mean_cp_m(Ti,Tf) # Konverterer til K inni
+    Ti += 273.15 # K
+    Tf += 273.15 # K
+    part3 = wm*(1-wm)*(const.As + (const.Bs/2)*(Tf**2-Ti**2)/(Tf-Ti) + ((const.Cs*wm)/(-0.5859))*((Tf-273.15)**(-0.5859)-(Ti-273.15)**(-0.5859))/(Tf-Ti))
     return part1 + part2 + part3
 
 
@@ -95,7 +103,7 @@ def cp_i(T, i): #([Celsius], int)
                 cp += w[key]*const.cpg[j] # cpg[j] er omtrent lik i temperaturområdet 45C-107C
     else:
         is_rich = False
-        if i in [3,6,7]:
+        if i in [4,5]:
             is_rich = True
         cp += w[f"wc{i}"]*cp_c(T)
         cp += w[f"wm{i}"]*cp_sol(T, is_rich)
@@ -111,10 +119,10 @@ def mean_cp_i(T1,T2,i): #([Celsius], [Celsius], int)
     else:
         cp = 0
         is_rich = False
-        if i in [3,6,7]:
+        if i in [4,5]:
             is_rich = True
         cp += w[f"wc{i}"]*mean_cp_c(T1,T2)
-        cp += w[f"wm{i}"]*mean_cp_sol(T1,T2, is_rich)
+        cp += (1-w[f"wc{i}"])*mean_cp_sol(T1,T2, is_rich)
         return cp
     
 def DeltaT_lm_V1(T7): #([Celsius])
@@ -165,7 +173,7 @@ def h_i(i):
                 h += w[key]*const.cpg[j]*(T-T_ref) #Entalpi temperaturøkning
     else:
         is_rich = False
-        if i in [3,6,7]:
+        if i in [4,5]:
             is_rich = True
         h += (1-w[f"wc{i}"])*(const.hfsol+(T-T_ref)*mean_cp_sol(T_ref,T,is_rich)) #Entalpi for MEA-løsning
         h += w[f"wc{i}"]*(const.hf[0]+(T-T_ref)*mean_cp_c(T_ref,T)) #Entalpi for CO2 i MEA-løsning
@@ -174,9 +182,16 @@ def h_i(i):
 
 T7, A = sp.optimize.root(V1, [T6-15, 190]).x
 const.T[6] = T7
-m10 = np.abs((T3-T7)/(T11-T10)) * (mean_cp_i(T7,T3,7)/mean_cp_h(T10,T11)) * m["m7"]
+m10 = abs((T3-T7)/(T11-T10)) * (mean_cp_i(T7,T3,7)/mean_cp_h(T10,T11)) * m["m7"]
 
-Q_V3 = m["m8"]*(w["wc8"]*(T9-T8)+w["wh8"]*(const.dHfus-const.dHsub)*(1000/const.Mw[1])) 
+Q_V3 = m["m8"]*(
+    w["wc8"]*mean_cp_c(T8,T9)*(T9-T8)+
+    w["wh8"]*(
+        mean_cp_h(T8,T9)*(T9-T8) -
+        const.dHvap*1000/const.Mw[1]
+        )
+    )
+print("Q_V3 = ", Q_V3, "h_i(5)*m5 = ", h_i(5)*m["m5"], "h_i(6)*m6 = ", h_i(6)*m["m6"], "h_i(9)*m9 = ", h_i(9)*m["m9"])
 Q_V4 = (Q_V3 + h_i(5)*m["m5"])-(h_i(6)*m["m6"] + h_i(9)*m["m9"])
 
 # Ettstegs kompresjon
@@ -185,7 +200,7 @@ def kompresjon_1():
     g = 1.3 # Adiabatisk eksponent for CO2: ca 1.3 ved 20C
     pb = 20 # Bar
     Tut = 303 # K
-    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1)) # C
+    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1)) # K
     return Tb-273.15 # C
 
 # Trestegs kompresjon

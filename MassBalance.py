@@ -37,12 +37,9 @@ def massBalances(vars):
     # Output
     eq = [0]*4
 
-    #Vektfraksjoner i strøm 2 
-    wn2 = (const.m1*const.wn1)/m2
-    wo2 = (const.m1*const.wo1)/m2
+    #Vektfraksjon for CO_2 i strøm 2 
     wc2 = ((1-const.wcapture)*const.m1*const.wc1)/m2
-    wh2 = 1-(wn2+wo2+wc2)
-    
+
     # Massestrøm fra reflukstank til stripper
     resirkulert_H2O = wh8*m8 
 
