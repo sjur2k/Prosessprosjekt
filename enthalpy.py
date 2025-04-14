@@ -5,7 +5,7 @@ import numpy as np
 T1,T2,T3,T4,T5,T6 = const.T[0:6]
 T8,T9,T10,T11 = const.T[7:11]
 
-useApprox = False
+useApprox = True
 if useApprox:
     filename = 'sim_data/massbalance_with_approx.txt'
 else:
@@ -153,7 +153,7 @@ def V1(vars):
     
     eq=[0]*2
     eq[0] = T7 - (T6-Q/(m6*mean_cp_hot))
-    eq[1] = A  - (Q/(const.U*deltaT_lm))
+    eq[1] = A  - (Q/(U*deltaT_lm))
     return eq
 
 # Spesifikk entalpi i strøm $i$
@@ -191,34 +191,8 @@ Q_V3 = m["m8"]*(
         const.dHvap*1000/const.Mw[1]
         )
     )
-print("Q_V3 = ", Q_V3, "h_i(5)*m5 = ", h_i(5)*m["m5"], "h_i(6)*m6 = ", h_i(6)*m["m6"], "h_i(9)*m9 = ", h_i(9)*m["m9"])
 Q_V4 = (Q_V3 + h_i(5)*m["m5"])-(h_i(6)*m["m6"] + h_i(9)*m["m9"])
 
-# Ettstegs kompresjon
-def kompresjon_1():
-    Tinn = T9+273.15 # K
-    g = 1.3 # Adiabatisk eksponent for CO2: ca 1.3 ved 20C
-    pb = 20 # Bar
-    Tut = 303 # K
-    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1)) # K
-    return Tb-273.15 # C
-
-# Trestegs kompresjon
-def kompresjon_3():
-    T_out = {}
-    Tinn = T9 + 273.15 # K
-    Tc = Te = 303
-    pb = 4 # Bar
-    pd = 8 # Bar
-    pf = 20 # Bar
-    g = 1.3 # Adiabatisk eksponent for CO2: ca 1.3 ved 20C
-    Tb = Tinn*(1+(1/const.eta)*((pb/const.p[8])**((g-1)/g)-1))
-    Td = Tc*(1+(1/const.eta)*((pd/pb)**((g-1)/g)-1))
-    Tf = Td*(1+(1/const.eta)*((pf/pd)**((g-1)/g)-1))
-    T_out["Tb"] = Tb-273.15
-    T_out["Td"] = Td-273.15
-    T_out["Tf"] = Tf-273.15
-    return T_out
 
 print(f"T7 = {round(T7,2)}°C")
 print(f"A = {round(A,2)}m^2")
@@ -227,6 +201,6 @@ for i in range(9):
     print(f"h_{i+1}: {round(h_i(i+1),2)} kJ/kg")
 print(f"Q_V3 = {round(Q_V3,2)} kJ")
 print(f"Q_V4 = {round(Q_V4,2)} kJ")
-print(f"Tb ved 1stegs kompresjon: {round(kompresjon_1(),2)}°C")
-for key,val in kompresjon_3().items():
-    print(f"{key} ved 3stegs kompresjon: {round(float(val),2)}°C")
+print(mean_cp_c(T8,T9))
+print("T_økning strøm 4:",A*DeltaT_lm_V1(T7)*const.U/(1000*m["m4"]*mean_cp_i(T4,T5,4)))
+print(mean_cp_i(T6,T7,6))

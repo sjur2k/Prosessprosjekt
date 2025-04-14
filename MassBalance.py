@@ -5,7 +5,7 @@ import WtFrac as wf
 import os
 
 # ------------------------------------------------------------
-use_mass_approximation = False
+use_mass_approximation = True
 #-------------------------------------------------------------
 should_write_to_file = False
 desimaler = 1
